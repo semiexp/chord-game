@@ -1,3 +1,4 @@
+import assert from 'assert';
 import React, { CSSProperties } from 'react';
 
 type RichButtonProps = {
@@ -7,6 +8,7 @@ type RichButtonProps = {
     width: number;
     style?: CSSProperties;
     disabled?: boolean;
+    highlight?: boolean;
     onClick?: () => void;
 }
 
@@ -57,10 +59,11 @@ export class RichButton extends React.Component<RichButtonProps, RichButtonState
     }
 
     render() {
-        const {text, textSize, height, width, disabled} = this.props;
+        const {text, textSize, height, width, highlight, disabled} = this.props;
         const {isMouseover} = this.state;
 
-        const bgColor = disabled ? "#cccccc" : isMouseover ? "#9999ff" : "#ccccff";
+        assert(!highlight || disabled);
+        const bgColor = disabled ? (highlight ? "#ffcccc" : "#cccccc") : isMouseover ? "#9999ff" : "#ccccff";
 
         const style: CSSProperties = {
             height,

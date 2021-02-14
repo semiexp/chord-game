@@ -13,6 +13,9 @@ type GamePanelProps = {
     backToTitle: () => void;
     playScale: () => void;
     playChord: () => void;
+
+    highlightChordType?: ChordType;
+    highlightChordBase?: Note;
 }
 
 export class GamePanel extends React.Component<GamePanelProps, {}> {
@@ -21,7 +24,7 @@ export class GamePanel extends React.Component<GamePanelProps, {}> {
     }
 
     render() {
-        const {baseKey, score, soundPlaying, answer, backToTitle, playScale, playChord} = this.props;
+        const {baseKey, score, soundPlaying, answer, backToTitle, playScale, playChord, highlightChordBase, highlightChordType} = this.props;
 
         const buttons = [
             { text: "I", top: 60, left: 10, base: 0, type: ChordType.MajorTriad },
@@ -35,9 +38,10 @@ export class GamePanel extends React.Component<GamePanelProps, {}> {
         let buttonElements = [];
         for (let i = 0; i < buttons.length; ++i) {
             const {text, top, left, base, type, size} = buttons[i];
+            const highlight = base === highlightChordBase && type === highlightChordType;
             buttonElements.push(<RichButton text={text} height={50} width={60} textSize={size || 30}
                                             style={{position: "absolute", top, left}} disabled={soundPlaying}
-                                            onClick={() => answer(type, base)} />);
+                                            highlight={highlight} onClick={() => answer(type, base)} />);
         }
 
         return (

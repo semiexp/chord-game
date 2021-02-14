@@ -5,14 +5,17 @@ import {sequentialSynth} from './synth';
 import {getChord, getMajorScale, ChordType, Note} from './chord';
 import {GamePanel} from './gamePanel';
 import { RichButton } from './component/richButton';
-import { isThisTypeNode } from 'typescript';
+
+function sleep(duration: number): Promise<void> {
+    return new Promise((resolve, reject) => setTimeout(resolve, duration));
+}
 
 enum AutomatonState {
-    Title, Main, PlayingScale, PlayingChord,
+    Title, Main, PlayingScale, PlayingChord, ShowAnswer,
 }
 
 function isGameState(state: AutomatonState): boolean {
-    return state === AutomatonState.Main || state === AutomatonState.PlayingScale || state === AutomatonState.PlayingChord;
+    return state === AutomatonState.Main || state === AutomatonState.PlayingScale || state === AutomatonState.PlayingChord || state === AutomatonState.ShowAnswer;
 }
 
 type ChordGameState = {
@@ -57,14 +60,14 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
     }
 
     async playScale() {
-        assert(this.state.automaton === AutomatonState.Main);
+        assert(this.state.automaton === AutomatonState.Main || this.state.automaton === AutomatonState.ShowAnswer);
         this.setState({ automaton: AutomatonState.PlayingScale });
         await sequentialSynth(getMajorScale(this.state.baseKey, 8), new Array<number>(8).fill(250));
         this.setState({ automaton: AutomatonState.Main });
     }
 
     async playChord() {
-        assert(this.state.automaton === AutomatonState.Main);
+        assert(this.state.automaton === AutomatonState.Main || this.state.automaton === AutomatonState.ShowAnswer);
         this.setState({ automaton: AutomatonState.PlayingChord });
 
         const {chordType, chordBase, baseKey} = this.state;
@@ -103,13 +106,12 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
     }
 
     async answer(type: ChordType, base: Note) {
-        const nextScore = this.state.score + (type === this.state.chordType && base === this.state.chordBase ? 100 : 0);
+        const isCorrect = type === this.state.chordType && base === this.state.chordBase;
+        const nextScore = this.state.score + (isCorrect ? 100 : 0);
         const nextNumTrials = this.state.numTrials + 1;
 
-        this.setState({
-            score: nextScore,
-            numTrials: nextNumTrials
-        });
+        this.setState({ automaton: AutomatonState.ShowAnswer, score: nextScore, numTrials: nextNumTrials });
+        await sleep(1000);
 
         if (nextNumTrials % 10 === 0) {
             await this.renewKey();
@@ -121,7 +123,8 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
 
     render() {
         const {automaton, score} = this.state;
-        const soundPlaying = automaton === AutomatonState.PlayingChord || automaton === AutomatonState.PlayingScale;
+        const soundPlaying = automaton === AutomatonState.PlayingChord || automaton === AutomatonState.PlayingScale || automaton === AutomatonState.ShowAnswer;
+        const showAnswer = automaton === AutomatonState.ShowAnswer;
 
         return (
             <div>
@@ -138,7 +141,8 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
                 { isGameState(automaton) &&
                     <GamePanel baseKey={this.state.baseKey} score={score} soundPlaying={soundPlaying}
                            backToTitle={() => this.backToTitle()} playScale={() => this.playScale()} playChord={() => this.playChord()}
-                           answer={this.answer.bind(this)} />
+                           answer={this.answer.bind(this)} highlightChordBase={showAnswer ? this.state.chordBase : undefined}
+                           highlightChordType={showAnswer ? this.state.chordType : undefined} />
                 }
             </div>
         );
