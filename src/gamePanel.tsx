@@ -10,6 +10,7 @@ type GamePanelProps = {
     soundPlaying: boolean;
 
     answer: (type: ChordType, base: Note) => void;
+    backToTitle: () => void;
     playScale: () => void;
     playChord: () => void;
 }
@@ -20,7 +21,7 @@ export class GamePanel extends React.Component<GamePanelProps, {}> {
     }
 
     render() {
-        const {baseKey, score, soundPlaying, answer, playScale, playChord} = this.props;
+        const {baseKey, score, soundPlaying, answer, backToTitle, playScale, playChord} = this.props;
 
         const buttons = [
             { text: "I", top: 60, left: 10, base: 0, type: ChordType.MajorTriad },
@@ -50,7 +51,7 @@ export class GamePanel extends React.Component<GamePanelProps, {}> {
 
                 { buttonElements }
 
-                <RichButton text="Back" height={30} width={60} textSize={20} style={{position: "absolute", top: 260, left: 10}}/>
+                <RichButton text="Back" height={30} width={60} textSize={20} style={{position: "absolute", top: 260, left: 10}} disabled={soundPlaying} onClick={() => backToTitle()}/>
             </div>
         );
     }
