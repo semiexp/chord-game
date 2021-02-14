@@ -36,29 +36,20 @@ export class Synth {
     }
 }
 
-export function sequentialSynth(chords: Chord[], durations: number[], onFinish?: () => void) {
-    assert(chords.length === durations.length);
-    if (chords.length === 0) {
-        return;
-    }
-    let synths: Synth[] = [];
-    for (let i = 0; i < chords.length; ++i) {
-        synths.push(new Synth(chords[i]));
-    }
-    synths[0].start();
-
-    let elapsed = 0;
-    for (let i = 0; i < chords.length; ++i) {
-        elapsed += durations[i];
+function timedSynch(chord: Chord, duration: number): Promise<void> {
+    let synth = new Synth(chord);
+    synth.start();
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
-            synths[i].stop();
-            if (i + 1 < chords.length) {
-                synths[i + 1].start();
-            } else {
-                if (onFinish) {
-                    onFinish();
-                }
-            }
-        }, elapsed);
+            synth.stop();
+            resolve();
+        }, duration);
+    });
+}
+
+export async function sequentialSynth(chords: Chord[], durations: number[]): Promise<void> {
+    assert(chords.length === durations.length);
+    for (let i = 0; i < chords.length; ++i) {
+        await timedSynch(chords[i], durations[i]);
     }
 }

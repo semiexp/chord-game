@@ -1,5 +1,6 @@
 import assert from 'assert';
 import React from 'react';
+
 import {sequentialSynth} from './synth'
 import {getChord, getMajorScale, ChordType, Note} from './chord'
 import {GamePanel} from './gamePanel'
@@ -34,17 +35,16 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
         };
     }
 
-    playScale() {
+    async playScale() {
         assert(!this.state.soundPlaying);
         this.setState({
             soundPlaying: true
         });
-        sequentialSynth(getMajorScale(this.state.baseKey, 8), new Array<number>(8).fill(250), () => this.setState({
-            soundPlaying: false
-        }));
+        await sequentialSynth(getMajorScale(this.state.baseKey, 8), new Array<number>(8).fill(250));
+        this.setState({ soundPlaying: false });
     }
 
-    playChord() {
+    async playChord() {
         assert(!this.state.soundPlaying);
         this.setState({
             soundPlaying: true
@@ -52,9 +52,8 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
 
         const {chordType, chordBase, baseKey} = this.state;
         console.log("play ", chordType, chordBase);
-        sequentialSynth([getChord(baseKey, chordBase, chordType)], [1000], () => this.setState({
-            soundPlaying: false
-        }));
+        await sequentialSynth([getChord(baseKey, chordBase, chordType)], [1000]);
+        this.setState({ soundPlaying: false });
     }
 
     selectNextKey() {
@@ -64,7 +63,7 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
         });
     }
 
-    selectNextChord(callback?: () => void) {
+    selectNextChord(): Promise<void> {
         const candidates = [
             [ChordType.MajorTriad, 0],  // I
             [ChordType.MinorTriad, 2],  // IIm
@@ -74,20 +73,21 @@ export class ChordGame extends React.Component<{}, ChordGameState> {
             [ChordType.MinorTriad, 9],  // VIm
         ];
         const chord = candidates[Math.floor(Math.random() * candidates.length)];
-        this.setState({
+        return new Promise((resolve, reject) => {this.setState({
             chordType: chord[0],
             chordBase: chord[1]
-        }, callback);
+        }, () => resolve())});
     }
 
-    answer(type: ChordType, base: Note) {
+    async answer(type: ChordType, base: Note) {
         console.log(this.state.chordType, this.state.chordBase);
         if (type === this.state.chordType && base === this.state.chordBase) {
             this.setState({
                 score: this.state.score + 100
             });
         }
-        this.selectNextChord(() => this.playChord());
+        await this.selectNextChord();
+        this.playChord();
     }
 
     render() {
